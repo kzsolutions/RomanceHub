@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-manrope), system-ui, -apple-system, sans-serif;
+
+  --color-brand-50: #fdf2f7;
+  --color-brand-100: #fbe7f0;
+  --color-brand-200: #f9d0e3;
+  --color-brand-300: #f5a9cb;
+  --color-brand-400: #ee74a8;
+  --color-brand-500: #e34489;
+  --color-brand-600: #cf216d;
+  --color-brand-700: #b21859;
+  --color-brand-800: #94174b;
+  --color-brand-900: #7c1741;
+  --color-brand-950: #4d0824;
+
+  --color-gold-300: #f2d48a;
+  --color-gold-400: #e9b949;
+  --color-gold-500: #d9a113;
+  --color-gold-600: #b07d0a;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 10px 30px -12px rgb(0 0 0 / 0.12);
+  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.05), 0 18px 40px -14px rgb(0 0 0 / 0.2);
+  --shadow-soft: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+:root {
+  --background: #fffbfc;
+  --surface: #ffffff;
+  --surface-2: #faf6f7;
+  --foreground: #1c1917;
+  --muted: #78716c;
+  --border: #eae3e6;
+  --ring: #cf216d;
+}
+
+.dark {
+  --background: #120d10;
+  --surface: #1a1317;
+  --surface-2: #241b20;
+  --foreground: #f5f1f2;
+  --muted: #a89ea3;
+  --border: #362a30;
+  --ring: #e34489;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+
+  ::selection {
+    background-color: var(--color-brand-200);
+    color: var(--color-brand-950);
+  }
+
+  .dark ::selection {
+    background-color: var(--color-brand-800);
+    color: #fdf2f7;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease both;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    color-mix(in srgb, var(--surface-2) 60%, var(--border)) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
