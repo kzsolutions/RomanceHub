@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { error: string } | null;
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://romancehub.vercel.app";
+
 function safeRedirect(target: string | null | undefined) {
   if (!target) return "/";
   if (!target.startsWith("/") || target.startsWith("//")) return "/";
@@ -64,7 +67,7 @@ export async function signUp(
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+      emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
     },
   });
 
@@ -95,7 +98,7 @@ export async function requestPasswordReset(
 
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/recuperar`,
+    redirectTo: `${SITE_URL}/auth/recuperar`,
   });
 
   redirect(`/recuperar-palavra-passe?enviado=1&email=${encodeURIComponent(email)}`);

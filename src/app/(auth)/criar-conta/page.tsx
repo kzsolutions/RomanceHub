@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Mail } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { SignUpForm } from "./SignUpForm";
 
 export default async function CriarContaPage({
@@ -46,14 +46,6 @@ export default async function CriarContaPage({
 
       <div className="rounded-2xl border bg-surface p-6 shadow-card sm:p-8">
         <SignUpForm redirectTo={redirect} />
-
-        <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-dashed bg-surface-2 p-4 text-xs text-muted">
-          <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            Para confirmar a conta é preciso configurar o Site URL do Supabase
-            (dashboard) — ver README, secção de autenticação.
-          </p>
-        </div>
       </div>
 
       <p className="mt-6 text-center text-sm text-muted">

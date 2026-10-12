@@ -19,17 +19,6 @@ export default async function EntrarPage({
 
       <div className="rounded-2xl border bg-surface p-6 shadow-card sm:p-8">
         <LoginForm redirectTo={redirect} serverError={erro} />
-
-        <div className="mt-6 rounded-xl border border-dashed bg-surface-2 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Contas de demonstração
-          </p>
-          <ul className="mt-2 space-y-1 font-mono text-xs text-foreground/80">
-            <li>admin@romancehub.app · RomanceHub2026</li>
-            <li>clara.monteiro@romancehub.app · RomanceHub2026</li>
-            <li>leitor@romancehub.app · RomanceHub2026</li>
-          </ul>
-        </div>
       </div>
 
       <p className="mt-6 text-center text-sm text-muted">
