@@ -91,6 +91,68 @@ export type Database = {
         }
         Relationships: []
       }
+      characters: {
+        Row: {
+          age: string | null
+          appearance: string | null
+          bio: string | null
+          created_at: string
+          id: string
+          is_public: boolean
+          name: string
+          occupation: string | null
+          personality: string | null
+          portrait_prompt: string | null
+          portrait_url: string | null
+          role: string
+          sort_order: number
+          story_id: string
+          updated_at: string
+        }
+        Insert: {
+          age?: string | null
+          appearance?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          name: string
+          occupation?: string | null
+          personality?: string | null
+          portrait_prompt?: string | null
+          portrait_url?: string | null
+          role?: string
+          sort_order?: number
+          story_id: string
+          updated_at?: string
+        }
+        Update: {
+          age?: string | null
+          appearance?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          name?: string
+          occupation?: string | null
+          personality?: string | null
+          portrait_prompt?: string | null
+          portrait_url?: string | null
+          role?: string
+          sort_order?: number
+          story_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "characters_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           color: string | null
@@ -712,6 +774,8 @@ export type Database = {
           id: string
           is_featured: boolean
           is_free: boolean
+          preview_min: number
+          preview_percent: number
           price_cents: number | null
           published_at: string | null
           rating_avg: number
@@ -732,6 +796,8 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_free?: boolean
+          preview_min?: number
+          preview_percent?: number
           price_cents?: number | null
           published_at?: string | null
           rating_avg?: number
@@ -752,6 +818,8 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_free?: boolean
+          preview_min?: number
+          preview_percent?: number
           price_cents?: number | null
           published_at?: string | null
           rating_avg?: number
@@ -925,6 +993,7 @@ export type Database = {
       gen_payment_reference: { Args: never; Returns: string }
       has_access: { Args: { p_chapter_id: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      story_preview_limit: { Args: { p_story_id: string }; Returns: number }
       record_read: {
         Args: { p_chapter_id: string; p_story_id: string }
         Returns: undefined

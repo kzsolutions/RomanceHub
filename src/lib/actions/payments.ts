@@ -2,16 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
 
 async function isAdminUser(): Promise<boolean> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-  const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  return data?.role === "admin";
+  const profile = await getCurrentProfile();
+  return profile?.role === "admin";
 }
 
 const RPC_ERRORS = new Set([
@@ -33,16 +28,13 @@ function parseRpcError(message: string | undefined): string {
 
 /** Cria um pedido de pagamento (o preço é calculado no servidor). */
 export async function createPaymentOrder(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, userId } = await getAuthContext();
 
   const storyId = String(formData.get("story_id") ?? "");
   const chapterId = String(formData.get("chapter_id") ?? "") || null;
   const backTo = String(formData.get("back") ?? "/explorar");
 
-  if (!user) {
+  if (!userId) {
     redirect(`/entrar?redirect=${encodeURIComponent(backTo)}`);
   }
 
@@ -66,16 +58,13 @@ export async function createPaymentOrder(formData: FormData) {
 
 /** Submete a referência da transferência e, opcionalmente, o comprovativo. */
 export async function submitPaymentProof(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, userId } = await getAuthContext();
 
   const orderId = String(formData.get("order_id") ?? "");
   const paymentRef = String(formData.get("payment_ref") ?? "").trim();
   const file = formData.get("proof");
 
-  if (!user || !orderId) {
+  if (!userId || !orderId) {
     redirect(`/entrar?redirect=${encodeURIComponent(`/pagamento/${orderId}`)}`);
   }
   if (!paymentRef) {
@@ -88,7 +77,7 @@ export async function submitPaymentProof(formData: FormData) {
       redirect(`/pagamento/${orderId}?erro=ficheiro`);
     }
     const ext = (file.name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
-    proofPath = `${user.id}/${orderId}-${Date.now()}.${ext}`;
+    proofPath = `${userId}/${orderId}-${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage
       .from("payment-proofs")
       .upload(proofPath, file, { upsert: true, contentType: file.type || undefined });

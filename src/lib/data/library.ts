@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthContext } from "@/lib/supabase/server";
 import { getStoriesByIds, type StoryCard } from "@/lib/data/stories";
 
 export type LibraryEntry = {
@@ -32,22 +32,19 @@ export async function getLibrary(): Promise<LibraryData> {
     stats: { reading: 0, favorites: 0, completed: 0 },
   };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return empty;
+  const { supabase, userId } = await getAuthContext();
+  if (!userId) return empty;
 
   const [progressRes, favoritesRes] = await Promise.all([
     supabase
       .from("reading_progress")
       .select("story_id,chapter_number,progress,completed,last_read_at")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("last_read_at", { ascending: false }),
     supabase
       .from("favorites")
       .select("story_id,created_at")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -93,16 +90,13 @@ export async function getLibrary(): Promise<LibraryData> {
 }
 
 export async function getFavoriteStories(): Promise<{ story: StoryCard; addedAt: string }[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  const { supabase, userId } = await getAuthContext();
+  if (!userId) return [];
 
   const { data } = await supabase
     .from("favorites")
     .select("story_id,created_at")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as { story_id: string; created_at: string }[];
@@ -129,16 +123,13 @@ export async function getNotifications(): Promise<{
   items: NotificationItem[];
   unread: number;
 }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { items: [], unread: 0 };
+  const { supabase, userId } = await getAuthContext();
+  if (!userId) return { items: [], unread: 0 };
 
   const { data, error } = await supabase
     .from("notifications")
     .select("id,type,title,body,link,is_read,created_at")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -163,23 +154,20 @@ export async function getStorySocialState(storyId: string): Promise<{
   isFavorite: boolean;
   myRating: number | null;
 }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { isFavorite: false, myRating: null };
+  const { supabase, userId } = await getAuthContext();
+  if (!userId) return { isFavorite: false, myRating: null };
 
   const [favRes, ratingRes] = await Promise.all([
     supabase
       .from("favorites")
       .select("story_id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("story_id", storyId)
       .maybeSingle(),
     supabase
       .from("ratings")
       .select("rating")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("story_id", storyId)
       .maybeSingle(),
   ]);

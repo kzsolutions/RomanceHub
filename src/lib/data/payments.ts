@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthContext } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import { PAGE_SIZE } from "@/lib/data/admin";
 
@@ -118,16 +118,13 @@ export function orderContentLabel(order: PaymentOrder): string {
 
 /** Pedidos/compras do próprio leitor (o RLS garante o isolamento). */
 export async function getMyPaymentOrders(): Promise<PaymentOrder[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  const { supabase, userId } = await getAuthContext();
+  if (!userId) return [];
 
   const { data, error } = await supabase
     .from("purchases")
     .select(ORDER_SELECT)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) {

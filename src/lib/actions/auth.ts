@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthContext } from "@/lib/supabase/server";
 
 export type AuthState = { error: string } | null;
 
@@ -135,11 +135,8 @@ export async function updateProfile(
 
   if (!name) return { error: "O nome é obrigatório." };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Sessão expirada. Entra novamente." };
+  const { supabase, userId } = await getAuthContext();
+  if (!userId) return { error: "Sessão expirada. Entra novamente." };
 
   const { error } = await supabase
     .from("profiles")
@@ -149,7 +146,7 @@ export async function updateProfile(
       avatar_url: avatarUrl || null,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", user.id);
+    .eq("id", userId);
 
   if (error) return { error: "Não foi possível guardar o perfil." };
 

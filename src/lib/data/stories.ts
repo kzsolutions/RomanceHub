@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
+import { previewChapterLimit } from "@/lib/preview";
 import type { Database } from "@/types/database";
 
 type Enums = Database["public"]["Enums"];
@@ -45,6 +46,8 @@ export type StoryDetail = {
   isAdmin: boolean;
   isAuthenticated: boolean;
   ownsStory: boolean;
+  previewLimit: number;
+  publishedCount: number;
   related: StoryCard[];
 };
 
@@ -94,7 +97,7 @@ const CARD_SELECT = [
   "price_cents",
   "completion",
   "published_at",
-  "author:profiles!stories_author_id_fkey(name)",
+  "author:profiles!stories_author_id_fkey(name,authors(pen_name))",
   "category:categories(name,slug)",
   "tags(name,slug)",
 ].join(",");
@@ -113,10 +116,22 @@ type CardRow = {
   price_cents: number | null;
   completion: Enums["story_completion"];
   published_at: string | null;
-  author: { name: string } | null;
+  author: { name: string; authors: { pen_name: string | null } | null } | null;
   category: { name: string; slug: string } | null;
   tags: { name: string; slug: string }[] | null;
 };
+
+/**
+ * Nome público do autor: usa o pseudónimo (`authors.pen_name`) quando existe,
+ * caindo para o nome interno do perfil. O nome interno (profiles.name) fica
+ * reservado à área de administração e nunca deve ser exposto publicamente.
+ */
+export function publicAuthorName(
+  author: { name: string; authors?: { pen_name: string | null } | null } | null | undefined,
+  fallback = "Autor desconhecido",
+): string {
+  return author?.authors?.pen_name || author?.name || fallback;
+}
 
 function mapCard(row: CardRow): StoryCard {
   return {
@@ -133,7 +148,7 @@ function mapCard(row: CardRow): StoryCard {
     priceCents: row.price_cents ?? null,
     completion: row.completion,
     publishedAt: row.published_at,
-    authorName: row.author?.name ?? "Autor desconhecido",
+    authorName: publicAuthorName(row.author),
     category: row.category ?? null,
     tags: row.tags ?? [],
   };
@@ -302,7 +317,14 @@ type DetailRow = CardRow & {
   author_id: string;
   category_id: string | null;
   updated_at: string;
-  author: { name: string; bio: string | null; avatar_url: string | null } | null;
+  preview_percent: number | null;
+  preview_min: number | null;
+  author: {
+    name: string;
+    bio: string | null;
+    avatar_url: string | null;
+    authors: { pen_name: string | null } | null;
+  } | null;
 };
 
 const DETAIL_SELECT = [
@@ -317,21 +339,20 @@ const DETAIL_SELECT = [
   "is_free",
   "is_featured",
   "price_cents",
+  "preview_percent",
+  "preview_min",
   "completion",
   "published_at",
   "author_id",
   "category_id",
   "updated_at",
-  "author:profiles!stories_author_id_fkey(name,bio,avatar_url)",
+  "author:profiles!stories_author_id_fkey(name,bio,avatar_url,authors(pen_name))",
   "category:categories(name,slug)",
   "tags(name,slug)",
 ].join(",");
 
 export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | null> => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, userId } = await getAuthContext();
 
   const { data, error } = await supabase
     .from("stories")
@@ -347,19 +368,19 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
   if (!data) return null;
   const row = data as unknown as DetailRow;
 
-  const [chaptersRes, progressRes, relatedRes, purchasesRes, profileRes] = await Promise.all([
+  const [chaptersRes, progressRes, relatedRes, purchasesRes, profile] = await Promise.all([
     supabase
       .from("chapters")
       .select("id,number,title,is_free,reads_count")
       .eq("story_id", row.id)
       .eq("is_published", true)
       .order("number"),
-    user
+    userId
       ? supabase
           .from("reading_progress")
           .select("chapter_number,progress,completed")
           .eq("story_id", row.id)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
     row.category_id
@@ -372,21 +393,19 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
           .order("rating_avg", { ascending: false })
           .limit(4)
       : Promise.resolve({ data: null }),
-    user
+    userId
       ? supabase
           .from("purchases")
           .select("chapter_id,kind")
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .eq("story_id", row.id)
           .eq("status", "completed")
       : Promise.resolve({ data: null }),
-    user
-      ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
-      : Promise.resolve({ data: null }),
+    getCurrentProfile(),
   ]);
 
-  const isOwner = Boolean(user && user.id === row.author_id);
-  const isAdmin = (profileRes.data as { role?: string } | null)?.role === "admin";
+  const isOwner = Boolean(userId && userId === row.author_id);
+  const isAdmin = profile?.role === "admin";
   const purchaseRows = (purchasesRes.data ?? []) as {
     chapter_id: string | null;
     kind: string;
@@ -395,6 +414,14 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
   const purchasedChapters = new Set(
     purchaseRows.filter((p) => p.kind === "chapter" && p.chapter_id).map((p) => p.chapter_id!),
   );
+
+  const publishedCount = (chaptersRes.data ?? []).length;
+  const previewLimit = previewChapterLimit({
+    publishedCount,
+    isFree: row.is_free,
+    previewPercent: row.preview_percent,
+    previewMin: row.preview_min,
+  });
 
   const chapters: ChapterSummary[] = ((chaptersRes.data ?? []) as {
     id: string;
@@ -414,7 +441,8 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
       !isOwner &&
       !isAdmin &&
       !purchasedStory &&
-      !purchasedChapters.has(ch.id),
+      !purchasedChapters.has(ch.id) &&
+      ch.number > previewLimit,
   }));
 
   const related = ((relatedRes.data ?? []) as unknown as CardRow[]).map(mapCard);
@@ -442,8 +470,10 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
       : null,
     isOwner,
     isAdmin,
-    isAuthenticated: Boolean(user),
+    isAuthenticated: Boolean(userId),
     ownsStory: row.is_free || isOwner || isAdmin || purchasedStory,
+    previewLimit,
+    publishedCount,
     related,
   };
 });

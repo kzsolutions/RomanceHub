@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Users,
 } from "lucide-react";
 import {
   getAdminAuthors,
@@ -60,13 +61,22 @@ export default async function EditStoryPage({ params }: { params: Promise<{ id: 
           <StatusBadge status={story.status} />
           {story.isFree && <Badge variant="free">Grátis</Badge>}
         </div>
-        <Link
-          href={`/historias/${story.slug}`}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-400"
-        >
-          <ExternalLink className="h-4 w-4" aria-hidden />
-          Ver no site
-        </Link>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link
+            href={`/admin/historias/${story.id}/personagens`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-400"
+          >
+            <Users className="h-4 w-4" aria-hidden />
+            Personagens
+          </Link>
+          <Link
+            href={`/historias/${story.slug}`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-400"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden />
+            Ver no site
+          </Link>
+        </div>
       </div>
 
       <StoryForm story={story} categories={categories} tags={tags} authors={authors} />

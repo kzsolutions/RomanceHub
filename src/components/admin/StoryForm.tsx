@@ -181,6 +181,45 @@ export function StoryForm({
             Para obras gratuitas não é necessário definir preço.
           </p>
         </div>
+
+        <div className="mt-4 grid max-w-md gap-4 sm:grid-cols-2">
+          <div>
+            <label className={labelClass} htmlFor="preview_percent">
+              Prévia gratuita (%)
+            </label>
+            <input
+              id="preview_percent"
+              name="preview_percent"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max="100"
+              step="1"
+              defaultValue={story ? String(story.previewPercent) : "50"}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="preview_min">
+              Mínimo de capítulos grátis
+            </label>
+            <input
+              id="preview_min"
+              name="preview_min"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              step="1"
+              defaultValue={story ? String(story.previewMin) : "3"}
+              className={inputClass}
+            />
+          </div>
+          <p className="text-xs text-muted sm:col-span-2">
+            Para obras premium, a prévia é 50% dos capítulos publicados (arredondado para baixo),
+            com o mínimo aplicado apenas quando existirem 6 ou mais publicados. As obras gratuitas
+            ficam sempre legíveis na totalidade.
+          </p>
+        </div>
       </Card>
 
       <Card>

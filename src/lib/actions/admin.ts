@@ -2,28 +2,32 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
 import { slugify, mtToCents } from "@/lib/utils";
 import type { StoryStatus, UserRole, ReportStatus } from "@/lib/data/admin";
 
 async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Não autenticado.");
+  const { supabase, userId } = await getAuthContext();
+  if (!userId) throw new Error("Não autenticado.");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
+  const profile = await getCurrentProfile();
   if (profile?.role !== "admin") throw new Error("Sem permissão de administrador.");
 
   return supabase;
 }
 
 const bool = (v: FormDataEntryValue | null) => v === "on" || v === "true";
+
+function clampInt(
+  value: FormDataEntryValue | null,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  const n = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
 
 function revalidatePublic(slug?: string) {
   revalidatePath("/");
@@ -50,6 +54,8 @@ export async function upsertStory(formData: FormData) {
   const isFeatured = bool(formData.get("is_featured"));
   const tagIds = formData.getAll("tags").map(String);
   const priceCents = isFree ? null : mtToCents(String(formData.get("price") ?? ""));
+  const previewPercent = clampInt(formData.get("preview_percent"), 0, 100, 50);
+  const previewMin = clampInt(formData.get("preview_min"), 0, 999, 3);
 
   if (!title || !synopsis || !authorId) {
     throw new Error("Título, sinopse e autor são obrigatórios.");
@@ -70,6 +76,8 @@ export async function upsertStory(formData: FormData) {
     is_free: isFree,
     is_featured: isFeatured,
     price_cents: priceCents,
+    preview_percent: previewPercent,
+    preview_min: previewMin,
     published_at: status === "published" ? new Date().toISOString() : null,
   };
 
@@ -361,6 +369,86 @@ export async function deleteBanner(formData: FormData) {
   if (id) await supabase.from("banners").delete().eq("id", id);
   revalidatePath("/admin/banners");
   revalidatePath("/");
+}
+
+const CHARACTER_ROLES = ["protagonista", "coprotagonista", "antagonista", "secundario"] as const;
+
+export async function upsertCharacter(formData: FormData) {
+  const supabase = await requireAdmin();
+
+  const storyId = String(formData.get("story_id") ?? "").trim();
+  const slug = String(formData.get("slug") ?? "").trim();
+  const id = String(formData.get("id") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
+  const roleInput = String(formData.get("role") ?? "secundario");
+  const role = (CHARACTER_ROLES as readonly string[]).includes(roleInput) ? roleInput : "secundario";
+
+  if (!storyId || !name) throw new Error("Nome do personagem é obrigatório.");
+
+  const age = String(formData.get("age") ?? "").trim() || null;
+  const occupation = String(formData.get("occupation") ?? "").trim() || null;
+  const appearance = String(formData.get("appearance") ?? "").trim() || null;
+  const personality = String(formData.get("personality") ?? "").trim() || null;
+  const bio = String(formData.get("bio") ?? "").trim() || null;
+  const portraitPrompt = String(formData.get("portrait_prompt") ?? "").trim() || null;
+  const sortOrder = clampInt(formData.get("sort_order"), 0, 9999, 0);
+  const isPublic = bool(formData.get("is_public"));
+
+  let portraitUrl = String(formData.get("portrait_url") ?? "").trim() || null;
+
+  const file = formData.get("portrait");
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("O retrato não pode exceder 5 MB.");
+    }
+    const ext = (file.name.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+    const path = `${storyId}/${id || "novo"}-${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("portraits")
+      .upload(path, file, { upsert: true, contentType: file.type || undefined });
+    if (uploadError) throw new Error(`Falha no upload do retrato: ${uploadError.message}`);
+    const { data: pub } = supabase.storage.from("portraits").getPublicUrl(path);
+    portraitUrl = pub.publicUrl;
+  }
+
+  const payload = {
+    story_id: storyId,
+    name,
+    role,
+    age,
+    occupation,
+    appearance,
+    personality,
+    bio,
+    portrait_url: portraitUrl,
+    portrait_prompt: portraitPrompt,
+    sort_order: sortOrder,
+    is_public: isPublic,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (id) {
+    const { error } = await supabase.from("characters").update(payload).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("characters").insert(payload);
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath(`/admin/historias/${storyId}`);
+  revalidatePath(`/admin/historias/${storyId}/personagens`);
+  if (slug) revalidatePath(`/historias/${slug}`);
+}
+
+export async function deleteCharacter(formData: FormData) {
+  const supabase = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const storyId = String(formData.get("story_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  if (id) await supabase.from("characters").delete().eq("id", id);
+  revalidatePath(`/admin/historias/${storyId}`);
+  revalidatePath(`/admin/historias/${storyId}/personagens`);
+  if (slug) revalidatePath(`/historias/${slug}`);
 }
 
 export async function updateSetting(formData: FormData) {

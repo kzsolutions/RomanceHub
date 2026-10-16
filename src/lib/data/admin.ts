@@ -227,6 +227,8 @@ export type AdminStoryDetail = {
   isFree: boolean;
   isFeatured: boolean;
   priceCents: number | null;
+  previewPercent: number;
+  previewMin: number;
   coverUrl: string | null;
   categoryId: string | null;
   authorId: string;
@@ -242,7 +244,7 @@ export async function getAdminStory(id: string): Promise<AdminStoryDetail | null
   const { data, error } = await supabase
     .from("stories")
     .select(
-      "id,title,slug,synopsis,status,completion,is_free,is_featured,price_cents,cover_url,category_id,author_id,reads_count,rating_avg,rating_count",
+      "id,title,slug,synopsis,status,completion,is_free,is_featured,price_cents,preview_percent,preview_min,cover_url,category_id,author_id,reads_count,rating_avg,rating_count",
     )
     .eq("id", id)
     .maybeSingle();
@@ -294,6 +296,8 @@ export async function getAdminStory(id: string): Promise<AdminStoryDetail | null
     isFree: data.is_free,
     isFeatured: data.is_featured,
     priceCents: data.price_cents ?? null,
+    previewPercent: data.preview_percent ?? 50,
+    previewMin: data.preview_min ?? 3,
     coverUrl: data.cover_url,
     categoryId: data.category_id,
     authorId: data.author_id,

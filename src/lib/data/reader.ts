@@ -1,5 +1,7 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
+import { previewChapterLimit } from "@/lib/preview";
+import { publicAuthorName } from "@/lib/data/stories";
 
 export type ReaderChapterLink = {
   number: number;
@@ -15,10 +17,14 @@ export type ReaderChapter = {
     title: string;
     isFree: boolean;
     coverUrl: string | null;
+    synopsis: string;
     authorId: string;
     authorName: string;
     priceCents: number | null;
     category: { name: string; slug: string } | null;
+    publishedCount: number;
+    previewLimit: number;
+    purchased: boolean;
   };
   chapter: {
     id: string;
@@ -44,23 +50,23 @@ type StoryRow = {
   title: string;
   is_free: boolean;
   cover_url: string | null;
+  synopsis: string;
   author_id: string;
   price_cents: number | null;
-  author: { name: string } | null;
+  preview_percent: number | null;
+  preview_min: number | null;
+  author: { name: string; authors: { pen_name: string | null } | null } | null;
   category: { name: string; slug: string } | null;
 };
 
 export const getReaderChapter = cache(
   async (slug: string, number: number): Promise<ReaderChapter | null> => {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { supabase, userId } = await getAuthContext();
 
     const { data: storyData, error: storyError } = await supabase
       .from("stories")
       .select(
-        "id,slug,title,is_free,cover_url,author_id,price_cents,author:profiles!stories_author_id_fkey(name),category:categories(name,slug)",
+        "id,slug,title,is_free,cover_url,author_id,price_cents,preview_percent,preview_min,synopsis,author:profiles!stories_author_id_fkey(name,authors(pen_name)),category:categories(name,slug)",
       )
       .eq("slug", slug)
       .eq("status", "published")
@@ -97,30 +103,28 @@ export const getReaderChapter = cache(
     const current = chapterRows.find((c) => c.number === number);
     if (!current) return null;
 
-    const [profileRes, purchasesRes, progressRes] = await Promise.all([
-      user
-        ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      user
+    const [profile, purchasesRes, progressRes] = await Promise.all([
+      getCurrentProfile(),
+      userId
         ? supabase
             .from("purchases")
             .select("chapter_id,kind")
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .eq("story_id", story.id)
             .eq("status", "completed")
         : Promise.resolve({ data: null }),
-      user
+      userId
         ? supabase
             .from("reading_progress")
             .select("chapter_number,progress")
             .eq("story_id", story.id)
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
 
-    const isOwner = Boolean(user && user.id === story.author_id);
-    const isAdmin = (profileRes.data as { role?: string } | null)?.role === "admin";
+    const isOwner = Boolean(userId && userId === story.author_id);
+    const isAdmin = profile?.role === "admin";
     const purchaseRows = (purchasesRes.data ?? []) as {
       chapter_id: string | null;
       kind: string;
@@ -130,13 +134,22 @@ export const getReaderChapter = cache(
       purchaseRows.filter((p) => p.kind === "chapter" && p.chapter_id).map((p) => p.chapter_id!),
     );
 
-    const entitled = (ch: { id: string; is_free: boolean }) =>
+    const publishedCount = chapterRows.length;
+    const previewLimit = previewChapterLimit({
+      publishedCount,
+      isFree: story.is_free,
+      previewPercent: story.preview_percent,
+      previewMin: story.preview_min,
+    });
+
+    const entitled = (ch: { id: string; is_free: boolean; number: number }) =>
       story.is_free ||
       ch.is_free ||
       isOwner ||
       isAdmin ||
       purchasedStory ||
-      purchasedChapters.has(ch.id);
+      purchasedChapters.has(ch.id) ||
+      ch.number <= previewLimit;
 
     const locked = !entitled(current);
 
@@ -165,10 +178,14 @@ export const getReaderChapter = cache(
         title: story.title,
         isFree: story.is_free,
         coverUrl: story.cover_url,
+        synopsis: story.synopsis,
         authorId: story.author_id,
-        authorName: story.author?.name ?? "Autor",
+        authorName: publicAuthorName(story.author, "Autor"),
         priceCents: story.price_cents,
         category: story.category,
+        publishedCount,
+        previewLimit,
+        purchased: purchasedStory,
       },
       chapter: {
         id: current.id,
@@ -181,7 +198,7 @@ export const getReaderChapter = cache(
       },
       content: locked ? null : content,
       locked,
-      isAuthenticated: Boolean(user),
+      isAuthenticated: Boolean(userId),
       prevNumber: index > 0 ? chapterRows[index - 1].number : null,
       nextNumber: index >= 0 && index < chapterRows.length - 1 ? chapterRows[index + 1].number : null,
       chapters: chapterRows.map((c) => ({

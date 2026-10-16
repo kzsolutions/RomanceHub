@@ -134,14 +134,7 @@ export default async function PagamentoPage({
               </span>
             </p>
             {order.storySlug && (
-              <Button
-                href={
-                  order.kind === "chapter" && order.chapterNumber !== null
-                    ? `/comprar/${order.storySlug}/${order.chapterNumber}`
-                    : `/comprar/${order.storySlug}`
-                }
-                variant="outline"
-              >
+              <Button href={`/comprar/${order.storySlug}`} variant="outline">
                 Criar novo pedido
               </Button>
             )}

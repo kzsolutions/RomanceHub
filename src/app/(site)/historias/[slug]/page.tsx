@@ -12,7 +12,9 @@ import {
   Lock,
 } from "lucide-react";
 import { getStoryBySlug } from "@/lib/data/stories";
+import { getStoryCharacters } from "@/lib/data/characters";
 import { getStorySocialState } from "@/lib/data/library";
+import { CharacterCard } from "@/components/stories/CharacterCard";
 import { FavoriteButton } from "@/components/stories/FavoriteButton";
 import { RatingWidget } from "@/components/stories/RatingWidget";
 import { SectionHeading } from "@/components/stories/SectionHeading";
@@ -54,6 +56,7 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
   if (!detail) notFound();
 
   const social = await getStorySocialState(detail.story.id);
+  const characters = await getStoryCharacters(detail.story.id);
 
   const { story, chapters, progress, related, authorBio, authorAvatar } = detail;
   const firstChapter = chapters[0]?.number ?? 1;
@@ -229,6 +232,11 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
                 Capítulo premium — desbloqueia para continuar
               </span>
             )}
+            {!story.isFree && !detail.ownsStory && detail.previewLimit > 0 && (
+              <span className="text-xs text-muted">
+                Os {detail.previewLimit} primeiros capítulos são uma prévia gratuita.
+              </span>
+            )}
             {progress && (
               <span className="text-xs text-muted">
                 {progress.completed ? "História concluída" : `${progress.percent}% lido`}
@@ -256,6 +264,23 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
           </div>
         </div>
       </section>
+
+      {/* Personagens */}
+      {characters.length > 0 && (
+        <section className="mt-10">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <h2 className="font-display text-2xl font-bold">Personagens</h2>
+            <span className="text-sm text-muted">
+              {characters.length} {characters.length === 1 ? "ficha" : "fichas"}
+            </span>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {characters.map((character) => (
+              <CharacterCard key={character.id} character={character} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Capítulos */}
       <section className="mt-10">
@@ -285,6 +310,8 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
                   {chapter.isFree || !chapter.locked ? (
                     chapter.isFree ? (
                       <Badge variant="free">Grátis</Badge>
+                    ) : !story.isFree && chapter.number <= detail.previewLimit ? (
+                      <Badge variant="brand">Prévia</Badge>
                     ) : (
                       <Badge variant="brand" icon={CheckCircle2}>
                         Desbloqueado

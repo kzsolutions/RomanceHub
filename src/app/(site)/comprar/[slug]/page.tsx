@@ -54,7 +54,8 @@ export default async function ComprarObraPage({
         </div>
         <h1 className="mt-2 font-display text-2xl font-bold sm:text-3xl">{story.title}</h1>
         <p className="mt-2 text-sm text-muted">
-          Acesso permanente a todos os capítulos desta obra.
+          Acesso permanente a todos os capítulos desta obra, incluindo os futuros. Pagas uma única
+          vez.
         </p>
 
         {errorMessage && (
@@ -106,7 +107,7 @@ export default async function ComprarObraPage({
                 <input type="hidden" name="back" value={`/comprar/${story.slug}`} />
                 <Button type="submit" variant="gold" size="lg" className="w-full sm:w-auto">
                   <Crown className="h-4 w-4" aria-hidden />
-                  Criar pedido de compra
+                  Desbloquear história completa
                 </Button>
               </form>
             )}

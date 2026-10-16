@@ -1,23 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ExternalLink } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
 import { Logo } from "@/components/layout/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/entrar?redirect=/admin");
+  const { userId } = await getAuthContext();
+  if (!userId) redirect("/entrar?redirect=/admin");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role,name")
-    .eq("id", user.id)
-    .maybeSingle();
+  const profile = await getCurrentProfile();
   if (profile?.role !== "admin") redirect("/");
 
   return (
@@ -37,7 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Ver site
             </Link>
             <ThemeToggle />
-            <span className="hidden text-sm font-medium sm:inline">{profile.name}</span>
+            <span className="hidden text-sm font-medium sm:inline">{profile?.name}</span>
           </div>
         </div>
       </header>

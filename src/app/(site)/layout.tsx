@@ -1,32 +1,26 @@
 import { SiteHeader, type HeaderUser } from "@/components/layout/SiteHeader";
 import { Footer } from "@/components/layout/Footer";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
 
 async function getCurrentUser(): Promise<HeaderUser | null> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
+    const { supabase, userId } = await getAuthContext();
+    if (!userId) return null;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name, avatar_url, role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const { count: unread } = await supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("is_read", false);
+    const [profile, notifications] = await Promise.all([
+      getCurrentProfile(),
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_read", false),
+    ]);
 
     return {
-      name: profile?.name || user.email?.split("@")[0] || "Leitor",
-      avatarUrl: profile?.avatar_url ?? null,
+      name: profile?.name || "Leitor",
+      avatarUrl: profile?.avatarUrl ?? null,
       role: profile?.role ?? "reader",
-      unreadCount: unread ?? 0,
+      unreadCount: notifications.count ?? 0,
     };
   } catch {
     return null;

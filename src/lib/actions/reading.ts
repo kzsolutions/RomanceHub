@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getAuthContext } from "@/lib/supabase/server";
 
 export type TrackResult = { ok: boolean };
 
@@ -11,13 +11,10 @@ export async function trackReading(input: {
   percent: number;
   completed: boolean;
 }): Promise<TrackResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, userId } = await getAuthContext();
 
   // Visitantes anónimos não têm progresso persistido.
-  if (!user) return { ok: false };
+  if (!userId) return { ok: false };
 
   const percent = Math.max(0, Math.min(100, Math.round(input.percent)));
 
@@ -30,7 +27,7 @@ export async function trackReading(input: {
   // Guarda a posição exata, idempotente por (user_id, story_id).
   const { error } = await supabase.from("reading_progress").upsert(
     {
-      user_id: user.id,
+      user_id: userId,
       story_id: input.storyId,
       chapter_id: input.chapterId,
       chapter_number: input.chapterNumber,

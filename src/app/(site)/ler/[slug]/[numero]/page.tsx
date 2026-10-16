@@ -38,7 +38,7 @@ export default async function ReaderPage({ params }: PageProps) {
   if (!data) notFound();
 
   const { story, chapter, chapters, content, locked } = data;
-  const firstFreeNumber = chapters.find((c) => c.isFree)?.number ?? null;
+  const firstReadableNumber = chapters.length > 0 ? chapters[0].number : null;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 pt-6 pb-20 sm:px-6">
@@ -60,8 +60,10 @@ export default async function ReaderPage({ params }: PageProps) {
           </span>
           {locked ? (
             <Badge variant="premium">Premium</Badge>
-          ) : chapter.isFree ? (
+          ) : chapter.isFree || story.isFree ? (
             <Badge variant="free">Grátis</Badge>
+          ) : chapter.number <= story.previewLimit ? (
+            <Badge variant="brand">Prévia</Badge>
           ) : (
             <Badge variant="brand">Desbloqueado</Badge>
           )}
@@ -90,14 +92,17 @@ export default async function ReaderPage({ params }: PageProps) {
       <div className="mt-10">
         {locked ? (
           <UnlockScreen
+            storyId={story.id}
             storySlug={story.slug}
             storyTitle={story.title}
-            chapterNumber={chapter.number}
-            chapterTitle={chapter.title}
+            authorName={story.authorName}
+            coverUrl={story.coverUrl}
+            synopsis={story.synopsis}
+            publishedCount={story.publishedCount}
+            previewLimit={story.previewLimit}
             isAuthenticated={data.isAuthenticated}
-            firstFreeNumber={firstFreeNumber}
+            firstReadableNumber={firstReadableNumber}
             nextNumber={data.nextNumber}
-            chapterPriceCents={chapter.priceCents}
             storyPriceCents={story.priceCents}
           />
         ) : content ? (
