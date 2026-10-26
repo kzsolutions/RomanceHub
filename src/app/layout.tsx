@@ -62,6 +62,13 @@ export default function RootLayout({
           </>
         )}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {process.env.NODE_ENV === "production" && (
+          <script
+            async
+            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5046331576710773"
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
       <body className={`${playfair.variable} ${manrope.variable} font-body`}>
         {children}
