@@ -10,6 +10,7 @@ import {
   Crown,
   Layers,
   Lock,
+  UserPlus,
 } from "lucide-react";
 import { getStoryBySlug } from "@/lib/data/stories";
 import { getStoryCharacters } from "@/lib/data/characters";
@@ -64,6 +65,10 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
 
   let startNumber = firstChapter;
   let ctaLabel = chapters.length > 0 ? "Começar a ler" : "Em breve";
+  if (!detail.isAuthenticated && chapters.length > 0) {
+    startNumber = firstChapter;
+    ctaLabel = "Ler o primeiro capítulo";
+  }
   if (progress && chapters.length > 0) {
     if (progress.completed) {
       startNumber = firstChapter;
@@ -115,6 +120,7 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
                 src={story.coverUrl}
                 alt={`Capa de ${story.title}`}
                 className="h-full w-full object-cover"
+                decoding="async"
               />
             )}
           </div>
@@ -222,11 +228,28 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
                 Comprar obra · {formatMT(story.priceCents)}
               </Button>
             )}
+            {!detail.isAuthenticated && chapters.length > 1 && (
+              <Button
+                href={`/criar-conta?redirect=${encodeURIComponent(
+                  `/ler/${story.slug}/${chapters[1].number}`,
+                )}`}
+                variant="outline"
+                size="lg"
+              >
+                <UserPlus className="h-4 w-4" aria-hidden />
+                Criar conta para continuar
+              </Button>
+            )}
             <FavoriteButton
               storyId={story.id}
               initialFavorite={social.isFavorite}
               isAuthenticated={detail.isAuthenticated}
             />
+            {!detail.isAuthenticated && chapters.length > 1 && (
+              <span className="text-xs text-muted">
+                O primeiro capítulo é grátis. Cria conta para ler os restantes.
+              </span>
+            )}
             {ctaLocked && (
               <span className="text-xs text-muted">
                 Capítulo premium — desbloqueia para continuar
@@ -307,7 +330,15 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
                     <BookOpen className="h-3.5 w-3.5" aria-hidden />
                     {formatNumber(chapter.readsCount)}
                   </span>
-                  {chapter.isFree || !chapter.locked ? (
+                  {!detail.isAuthenticated ? (
+                    chapter.number <= 1 ? (
+                      <Badge variant="free">Grátis</Badge>
+                    ) : (
+                      <Badge variant="brand" icon={Lock}>
+                        Requer conta
+                      </Badge>
+                    )
+                  ) : chapter.isFree || !chapter.locked ? (
                     chapter.isFree ? (
                       <Badge variant="free">Grátis</Badge>
                     ) : !story.isFree && chapter.number <= detail.previewLimit ? (

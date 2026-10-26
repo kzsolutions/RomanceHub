@@ -36,7 +36,7 @@ export default async function SiteLayout({
     <div className="flex min-h-screen flex-col">
       <SiteHeader user={user} />
       <main className="flex-1">{children}</main>
-      <Footer />
+      <Footer user={user} />
     </div>
   );
 }

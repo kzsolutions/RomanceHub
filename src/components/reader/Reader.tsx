@@ -112,7 +112,7 @@ export function Reader({
         />
       </div>
 
-      <div className="mb-8 flex items-center justify-end gap-2">
+      <div className="mb-8 flex flex-wrap items-center justify-end gap-2">
         <span className="inline-flex items-center gap-1 text-xs font-medium text-muted">
           <Type className="h-3.5 w-3.5" aria-hidden />
           Texto
@@ -152,7 +152,10 @@ export function Reader({
 
       <div ref={articleRef}>
         <article
-          className={cn("mx-auto font-[425]", wide ? "max-w-3xl" : "max-w-2xl")}
+          className={cn(
+            "mx-auto break-words font-[425] [hyphens:auto]",
+            wide ? "max-w-3xl" : "max-w-2xl",
+          )}
           style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}
         >
           {paragraphs.length > 0 ? (

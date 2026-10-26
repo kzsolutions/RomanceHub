@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createClient, getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
 import { previewChapterLimit } from "@/lib/preview";
+import { guestCanRead, isFreeAccessActive } from "@/lib/access";
 import type { Database } from "@/types/database";
 
 type Enums = Database["public"]["Enums"];
@@ -143,7 +144,7 @@ function mapCard(row: CardRow): StoryCard {
     ratingAvg: row.rating_avg,
     ratingCount: row.rating_count,
     readsCount: row.reads_count,
-    isFree: row.is_free,
+    isFree: row.is_free || isFreeAccessActive(),
     isFeatured: row.is_featured,
     priceCents: row.price_cents ?? null,
     completion: row.completion,
@@ -209,7 +210,7 @@ export async function listStories(
 
   if (categoryId) query = query.eq("category_id", categoryId);
   if (storyIds) query = query.in("id", storyIds);
-  if (freeOnly) query = query.eq("is_free", true);
+  if (freeOnly && !isFreeAccessActive()) query = query.eq("is_free", true);
   if (completion) query = query.eq("completion", completion);
 
   const ordered =
@@ -240,7 +241,7 @@ export async function listStories(
         .eq("status", "published");
       if (categoryId) recount = recount.eq("category_id", categoryId);
       if (storyIds) recount = recount.in("id", storyIds);
-      if (freeOnly) recount = recount.eq("is_free", true);
+      if (freeOnly && !isFreeAccessActive()) recount = recount.eq("is_free", true);
       if (completion) recount = recount.eq("completion", completion);
       const { count: exact } = await recount;
       return { items: [], total: exact ?? 0 };
@@ -415,6 +416,8 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
     purchaseRows.filter((p) => p.kind === "chapter" && p.chapter_id).map((p) => p.chapter_id!),
   );
 
+  const isGuest = !userId;
+  const effectiveFree = row.is_free || isFreeAccessActive();
   const publishedCount = (chaptersRes.data ?? []).length;
   const previewLimit = previewChapterLimit({
     publishedCount,
@@ -435,14 +438,15 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
     title: ch.title,
     isFree: ch.is_free,
     readsCount: ch.reads_count,
-    locked:
-      !row.is_free &&
-      !ch.is_free &&
-      !isOwner &&
-      !isAdmin &&
-      !purchasedStory &&
-      !purchasedChapters.has(ch.id) &&
-      ch.number > previewLimit,
+    locked: isGuest
+      ? !guestCanRead(ch.number)
+      : !effectiveFree &&
+        !ch.is_free &&
+        !isOwner &&
+        !isAdmin &&
+        !purchasedStory &&
+        !purchasedChapters.has(ch.id) &&
+        ch.number > previewLimit,
   }));
 
   const related = ((relatedRes.data ?? []) as unknown as CardRow[]).map(mapCard);
@@ -471,7 +475,7 @@ export const getStoryBySlug = cache(async (slug: string): Promise<StoryDetail | 
     isOwner,
     isAdmin,
     isAuthenticated: Boolean(userId),
-    ownsStory: row.is_free || isOwner || isAdmin || purchasedStory,
+    ownsStory: (Boolean(userId) && effectiveFree) || isOwner || isAdmin || purchasedStory,
     previewLimit,
     publishedCount,
     related,
@@ -544,15 +548,22 @@ export async function getHomeData(): Promise<HomeData> {
       .from("chapters")
       .select("id", { count: "exact", head: true })
       .eq("is_published", true),
-    listStories({ sort: "novidades", page: 1, pageSize: 6 }),
+    listStories({ sort: "novidades", page: 1, pageSize: 4 }),
     listStories({ sort: "mais-lidas", page: 1, pageSize: 6 }),
-    supabase
-      .from("stories")
-      .select(CARD_SELECT)
-      .eq("status", "published")
-      .eq("is_free", true)
-      .order("rating_avg", { ascending: false })
-      .limit(4),
+    (isFreeAccessActive()
+      ? supabase
+          .from("stories")
+          .select(CARD_SELECT)
+          .eq("status", "published")
+          .order("rating_avg", { ascending: false })
+          .limit(4)
+      : supabase
+          .from("stories")
+          .select(CARD_SELECT)
+          .eq("status", "published")
+          .eq("is_free", true)
+          .order("rating_avg", { ascending: false })
+          .limit(4)),
   ]);
 
   const banners = ((bannersRes.data ?? []) as unknown as {

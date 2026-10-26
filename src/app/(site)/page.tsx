@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Crown, Library, Layers, PenLine, Star } from "lucide-react";
 import { getHomeData } from "@/lib/data/stories";
+import { getCurrentProfile } from "@/lib/supabase/server";
 import { CategoryIcon } from "@/components/stories/CategoryIcon";
 import { SectionHeading } from "@/components/stories/SectionHeading";
 import { StoryGrid } from "@/components/stories/StoryCard";
@@ -9,8 +10,9 @@ import { Button } from "@/components/ui/Button";
 import { formatNumber, formatRating } from "@/lib/utils";
 
 export default async function HomePage() {
-  const data = await getHomeData();
+  const [data, profile] = await Promise.all([getHomeData(), getCurrentProfile()]);
   const [spotlight, ...otherFeatured] = data.featured;
+  const isAuthed = Boolean(profile);
 
   return (
     <>
@@ -39,9 +41,16 @@ export default async function HomePage() {
                   Explorar histórias
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Button>
-                <Button href="/criar-conta" variant="outline" size="lg">
-                  Criar conta grátis
-                </Button>
+                {isAuthed ? (
+                  <Button href="/biblioteca" variant="outline" size="lg">
+                    <Library className="h-4 w-4" aria-hidden />
+                    Minha biblioteca
+                  </Button>
+                ) : (
+                  <Button href="/criar-conta" variant="outline" size="lg">
+                    Criar conta grátis
+                  </Button>
+                )}
               </div>
               <dl className="animate-fade-up mt-10 flex flex-wrap gap-x-8 gap-y-4 border-t pt-6">
                 <div>
@@ -68,11 +77,12 @@ export default async function HomePage() {
             {spotlight && (
               <Link
                 href={`/historias/${spotlight.slug}`}
+                prefetch
                 className="group relative mx-auto w-full max-w-sm"
               >
                 <div className="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-brand-200/40 via-transparent to-gold-300/30 blur-xl" />
-                <div className="relative flex gap-4 rounded-3xl border bg-surface p-4 shadow-card transition-shadow duration-300 group-hover:shadow-card-hover">
-                  <div className="aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-surface-2 sm:w-36">
+                <div className="relative flex flex-col gap-4 rounded-3xl border bg-surface p-4 shadow-card transition-shadow duration-300 group-hover:shadow-card-hover sm:flex-row">
+                  <div className="mx-auto aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-surface-2 sm:mx-0 sm:w-36">
                     {spotlight.coverUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -82,8 +92,8 @@ export default async function HomePage() {
                       />
                     )}
                   </div>
-                  <div className="flex min-w-0 flex-col py-1">
-                    <div className="flex flex-wrap gap-1.5">
+                  <div className="flex min-w-0 flex-col items-center py-1 text-center sm:items-start sm:text-left">
+                    <div className="flex flex-wrap justify-center gap-1.5 sm:justify-start">
                       <Badge variant="brand" icon={Crown}>
                         Destaque
                       </Badge>
@@ -96,7 +106,7 @@ export default async function HomePage() {
                     <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted">
                       {spotlight.synopsis}
                     </p>
-                    <div className="mt-auto flex items-center gap-3 pt-3 text-xs">
+                    <div className="mt-auto flex items-center justify-center gap-3 pt-3 text-xs sm:justify-start">
                       <span className="flex items-center gap-1 font-semibold">
                         <Star className="h-3.5 w-3.5 fill-gold-400 text-gold-400" aria-hidden />
                         {formatRating(spotlight.ratingAvg)}
@@ -214,7 +224,7 @@ export default async function HomePage() {
             title="Novidades na plataforma"
             href="/explorar?ordenar=novidades"
           />
-          <StoryGrid stories={data.novidades} eagerCount={4} />
+          <StoryGrid stories={data.novidades} eagerCount={4} className="xl:grid-cols-4" />
         </section>
       )}
 
@@ -305,35 +315,37 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* CTA final */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-6 py-12 text-center shadow-card sm:px-12">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_45%)]"
-          />
-          <h2 className="relative font-display text-3xl font-bold text-white sm:text-4xl">
-            Cria a tua conta e guarda as tuas leituras
-          </h2>
-          <p className="relative mx-auto mt-3 max-w-xl text-white/85">
-            Acompanha o teu progresso, guarda favoritos e recebe aviso quando saírem novos capítulos
-            das tuas histórias favoritas.
-          </p>
-          <div className="relative mt-7 flex flex-wrap justify-center gap-3">
-            <Button
-              href="/criar-conta"
-              size="lg"
-              className="bg-white text-brand-700 hover:bg-brand-50"
-            >
-              <PenLine className="h-4 w-4" aria-hidden />
-              Criar conta grátis
-            </Button>
-            <Button href="/explorar" variant="outline" size="lg" className="border-white/40 bg-white/10 text-white hover:bg-white/20">
-              Continuar a explorar
-            </Button>
+      {/* CTA final — apenas para visitantes */}
+      {!isAuthed && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-6 py-12 text-center shadow-card sm:px-12">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_45%)]"
+            />
+            <h2 className="relative font-display text-3xl font-bold text-white sm:text-4xl">
+              Cria a tua conta e guarda as tuas leituras
+            </h2>
+            <p className="relative mx-auto mt-3 max-w-xl text-white/85">
+              Acompanha o teu progresso, guarda favoritos e recebe aviso quando saírem novos capítulos
+              das tuas histórias favoritas.
+            </p>
+            <div className="relative mt-7 flex flex-wrap justify-center gap-3">
+              <Button
+                href="/criar-conta"
+                size="lg"
+                className="bg-white text-brand-700 hover:bg-brand-50"
+              >
+                <PenLine className="h-4 w-4" aria-hidden />
+                Criar conta grátis
+              </Button>
+              <Button href="/explorar" variant="outline" size="lg" className="border-white/40 bg-white/10 text-white hover:bg-white/20">
+                Continuar a explorar
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </>
   );
 }

@@ -14,6 +14,7 @@ export function StoryCard({
   return (
     <Link
       href={`/historias/${story.slug}`}
+      prefetch
       className="group flex flex-col rounded-2xl border bg-surface p-3 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card"
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-surface-2">
@@ -24,6 +25,8 @@ export function StoryCard({
             alt={`Capa de ${story.title}`}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading={eager ? "eager" : "lazy"}
+            decoding="async"
+            fetchPriority={eager ? "high" : "auto"}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-200 via-brand-300 to-brand-500 p-4 text-center">

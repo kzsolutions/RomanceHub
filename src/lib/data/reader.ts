@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { getAuthContext, getCurrentProfile } from "@/lib/supabase/server";
 import { previewChapterLimit } from "@/lib/preview";
+import { guestCanRead, isFreeAccessActive } from "@/lib/access";
 import { publicAuthorName } from "@/lib/data/stories";
 
 export type ReaderChapterLink = {
@@ -8,6 +9,7 @@ export type ReaderChapterLink = {
   title: string;
   isFree: boolean;
   locked: boolean;
+  requiresAuth: boolean;
 };
 
 export type ReaderChapter = {
@@ -37,6 +39,8 @@ export type ReaderChapter = {
   };
   content: string | null;
   locked: boolean;
+  /** Motivo do bloqueio: sessão em falta ou compra/prévia. */
+  lockReason: "auth" | "premium" | null;
   isAuthenticated: boolean;
   prevNumber: number | null;
   nextNumber: number | null;
@@ -134,6 +138,8 @@ export const getReaderChapter = cache(
       purchaseRows.filter((p) => p.kind === "chapter" && p.chapter_id).map((p) => p.chapter_id!),
     );
 
+    const freeAccess = isFreeAccessActive();
+    const isGuest = !userId;
     const publishedCount = chapterRows.length;
     const previewLimit = previewChapterLimit({
       publishedCount,
@@ -142,14 +148,21 @@ export const getReaderChapter = cache(
       previewMin: story.preview_min,
     });
 
+    // Visitantes só podem ler o primeiro capítulo. A regra tem prioridade
+    // sobre histórias gratuitas e sobre a janela de acesso livre: o cadastro
+    // é obrigatório a partir do segundo capítulo. Para quem tem sessão, tudo
+    // continua como antes (acesso livre, compras, prévia, autor/admin).
     const entitled = (ch: { id: string; is_free: boolean; number: number }) =>
-      story.is_free ||
-      ch.is_free ||
-      isOwner ||
-      isAdmin ||
-      purchasedStory ||
-      purchasedChapters.has(ch.id) ||
-      ch.number <= previewLimit;
+      isGuest
+        ? guestCanRead(ch.number)
+        : freeAccess ||
+          story.is_free ||
+          ch.is_free ||
+          isOwner ||
+          isAdmin ||
+          purchasedStory ||
+          purchasedChapters.has(ch.id) ||
+          ch.number <= previewLimit;
 
     const locked = !entitled(current);
 
@@ -176,7 +189,7 @@ export const getReaderChapter = cache(
         id: story.id,
         slug: story.slug,
         title: story.title,
-        isFree: story.is_free,
+        isFree: freeAccess || story.is_free,
         coverUrl: story.cover_url,
         synopsis: story.synopsis,
         authorId: story.author_id,
@@ -198,6 +211,7 @@ export const getReaderChapter = cache(
       },
       content: locked ? null : content,
       locked,
+      lockReason: locked ? (isGuest ? "auth" : "premium") : null,
       isAuthenticated: Boolean(userId),
       prevNumber: index > 0 ? chapterRows[index - 1].number : null,
       nextNumber: index >= 0 && index < chapterRows.length - 1 ? chapterRows[index + 1].number : null,
@@ -206,6 +220,7 @@ export const getReaderChapter = cache(
         title: c.title,
         isFree: c.is_free,
         locked: !entitled(c),
+        requiresAuth: isGuest && !guestCanRead(c.number),
       })),
       progress: progressData
         ? {

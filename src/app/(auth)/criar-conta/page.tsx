@@ -22,7 +22,9 @@ export default async function CriarContaPage({
           Clica no link para ativar a conta e volta para iniciar sessão.
         </p>
         <div className="mt-6 flex flex-col gap-3">
-          <Link href="/entrar">
+          <Link
+            href={redirect ? `/entrar?redirect=${encodeURIComponent(redirect)}` : "/entrar"}
+          >
             <span className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-brand-700">
               Ir para início de sessão
             </span>
@@ -51,7 +53,7 @@ export default async function CriarContaPage({
       <p className="mt-6 text-center text-sm text-muted">
         Já tens conta?{" "}
         <Link
-          href="/entrar"
+          href={redirect ? `/entrar?redirect=${encodeURIComponent(redirect)}` : "/entrar"}
           className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400"
         >
           Iniciar sessão

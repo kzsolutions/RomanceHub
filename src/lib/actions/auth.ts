@@ -86,7 +86,8 @@ export async function signUp(
   }
 
   revalidatePath("/", "layout");
-  redirect(`/criar-conta?enviado=1&email=${encodeURIComponent(email)}`);
+  const next = redirectTo !== "/" ? `&redirect=${encodeURIComponent(redirectTo)}` : "";
+  redirect(`/criar-conta?enviado=1&email=${encodeURIComponent(email)}${next}`);
 }
 
 export async function requestPasswordReset(

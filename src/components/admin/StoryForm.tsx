@@ -76,10 +76,46 @@ export function StoryForm({
               id="synopsis"
               name="synopsis"
               required
-              rows={4}
+              rows={6}
               defaultValue={story?.synopsis ?? ""}
               className={textareaClass}
+              placeholder="Abre com uma regra, um segredo ou um limite prestes a ser quebrado. Apresenta os protagonistas e o que têm a perder, o conflito que os aproxima e os afasta, e fecha com uma pergunta por responder — sem revelar o desfecho."
             />
+            <details className="mt-2 rounded-xl border bg-surface-2/40 px-3 py-2 text-sm">
+              <summary className="cursor-pointer font-semibold text-muted">
+                Como escrever uma sinopse envolvente
+              </summary>
+              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-muted">
+                <li>
+                  <strong>Gancho inicial:</strong> uma frase de impacto que apresente uma regra, uma
+                  ameaça, um segredo ou uma promessa impossível (original de cada obra).
+                </li>
+                <li>
+                  <strong>Protagonistas:</strong> objetivos, personalidade, vulnerabilidades e o que
+                  cada um tem a perder.
+                </li>
+                <li>
+                  <strong>Conflito central:</strong> o que os obriga a aproximar-se e, ao mesmo
+                  tempo, o que os impede de ficar juntos.
+                </li>
+                <li>
+                  <strong>Atração e tensão:</strong> gestos, silêncios e contradições — sem resolver
+                  os sentimentos cedo demais.
+                </li>
+                <li>
+                  <strong>Consequências:</strong> o risco de cederem, revelarem um segredo ou
+                  tomarem a decisão errada.
+                </li>
+                <li>
+                  <strong>Gancho final:</strong> uma ameaça, uma escolha difícil ou uma revelação
+                  iminente. Nunca revelar o desfecho.
+                </li>
+              </ul>
+              <p className="mt-2 text-xs text-muted">
+                Evita resumir os acontecimentos ou tornar todas as obras iguais — a sinopse deve
+                respeitar a identidade de cada história.
+              </p>
+            </details>
           </div>
           <div>
             <label className={labelClass} htmlFor="category_id">

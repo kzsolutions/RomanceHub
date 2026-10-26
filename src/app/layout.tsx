@@ -6,7 +6,7 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
   display: "swap",
-  weight: ["600", "700", "800"],
+  weight: ["600", "700"],
   style: ["normal", "italic"],
 });
 
@@ -14,7 +14,7 @@ const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -45,6 +45,8 @@ export const viewport: Viewport = {
 
 const themeScript = `(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}if(t==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();`;
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -53,6 +55,12 @@ export default function RootLayout({
   return (
     <html lang="pt-PT" suppressHydrationWarning>
       <head>
+        {supabaseUrl && (
+          <>
+            <link rel="preconnect" href={supabaseUrl} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={supabaseUrl} />
+          </>
+        )}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${playfair.variable} ${manrope.variable} font-body`}>

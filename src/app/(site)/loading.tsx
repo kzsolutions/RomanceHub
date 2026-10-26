@@ -29,7 +29,7 @@ export default function HomeLoading() {
       <div className="mx-auto max-w-7xl space-y-14 px-4 py-14 sm:px-6 lg:px-8">
         <section className="space-y-6">
           <Skeleton className="h-8 w-48" />
-          <StoryGridSkeleton count={6} />
+          <StoryGridSkeleton count={4} className="xl:grid-cols-4" />
         </section>
         <section className="space-y-6">
           <Skeleton className="h-8 w-56" />

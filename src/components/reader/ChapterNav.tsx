@@ -68,7 +68,7 @@ export function ChapterMenu({
         <span className="sm:hidden">Cap. {currentNumber}</span>
         <ChevronRight className="h-3.5 w-3.5 text-muted transition-transform group-open:rotate-90" aria-hidden />
       </summary>
-      <div className="absolute right-0 z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-2xl border bg-surface p-2 shadow-card">
+      <div className="absolute right-0 z-50 mt-2 max-h-80 w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border bg-surface p-2 shadow-card">
         <p className="px-3 py-2 text-xs font-semibold text-muted">
           {current?.title ?? "Capítulos"}
         </p>
@@ -87,10 +87,17 @@ export function ChapterMenu({
                       : "text-foreground hover:bg-surface-2",
                   )}
                 >
-                  <span className="truncate">
+                  <span className="min-w-0 flex-1 truncate">
                     <span className="tabular-nums text-muted">{c.number}.</span> {c.title}
                   </span>
-                  {c.locked && <span className="shrink-0 text-gold-500">Premium</span>}
+                  {c.requiresAuth && (
+                    <span className="shrink-0 text-[11px] font-semibold text-brand-600 dark:text-brand-400">
+                      Conta
+                    </span>
+                  )}
+                  {!c.requiresAuth && c.locked && (
+                    <span className="shrink-0 text-gold-500">Premium</span>
+                  )}
                   {!c.locked && c.isFree && (
                     <span className="shrink-0 text-[11px] font-semibold text-emerald-600">Grátis</span>
                   )}

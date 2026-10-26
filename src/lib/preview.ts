@@ -5,10 +5,15 @@
  * 0007), que é a fonte de verdade para a segurança (RLS). Esta versão serve a
  * interface e deve manter-se em sincronia com a função SQL:
  *   - histórias gratuitas: toda a obra é legível;
+ *   - durante a janela de acesso livre temporário: toda a obra é legível para
+ *     utilizadores com sessão (visitantes ficam limitados ao capítulo 1, regra
+ *     aplicada em `access.ts` e na RLS);
  *   - caso contrário: floor(publishedCount * percent / 100), com o mínimo
  *     aplicado apenas quando a história tem pelo menos PREVIEW_MIN_THRESHOLD
  *     capítulos publicados; nunca superior ao número de publicados.
  */
+
+import { isFreeAccessActive } from "@/lib/access";
 
 export const PREVIEW_MIN_THRESHOLD = 6;
 export const DEFAULT_PREVIEW_PERCENT = 50;
@@ -25,7 +30,7 @@ export function previewChapterLimit({
   previewPercent?: number | null;
   previewMin?: number | null;
 }): number {
-  if (isFree) return publishedCount;
+  if (isFree || isFreeAccessActive()) return publishedCount;
 
   const percent = previewPercent ?? DEFAULT_PREVIEW_PERCENT;
   const min = previewMin ?? DEFAULT_PREVIEW_MIN;

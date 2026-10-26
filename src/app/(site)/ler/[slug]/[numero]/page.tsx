@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Eye, Feather } from "lucide-react";
+import { ArrowLeft, CalendarDays, Eye, Feather, Lock } from "lucide-react";
 import { getReaderChapter } from "@/lib/data/reader";
 import { ChapterMenu, ChapterNav } from "@/components/reader/ChapterNav";
 import { Reader } from "@/components/reader/Reader";
+import { AuthGate } from "@/components/reader/AuthGate";
 import { UnlockScreen } from "@/components/reader/UnlockScreen";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate, formatNumber } from "@/lib/utils";
@@ -59,7 +60,13 @@ export default async function ReaderPage({ params }: PageProps) {
             Capítulo {chapter.number}
           </span>
           {locked ? (
-            <Badge variant="premium">Premium</Badge>
+            data.lockReason === "auth" ? (
+              <Badge variant="brand" icon={Lock}>
+                Requer conta
+              </Badge>
+            ) : (
+              <Badge variant="premium">Premium</Badge>
+            )
           ) : chapter.isFree || story.isFree ? (
             <Badge variant="free">Grátis</Badge>
           ) : chapter.number <= story.previewLimit ? (
@@ -91,20 +98,33 @@ export default async function ReaderPage({ params }: PageProps) {
 
       <div className="mt-10">
         {locked ? (
-          <UnlockScreen
-            storyId={story.id}
-            storySlug={story.slug}
-            storyTitle={story.title}
-            authorName={story.authorName}
-            coverUrl={story.coverUrl}
-            synopsis={story.synopsis}
-            publishedCount={story.publishedCount}
-            previewLimit={story.previewLimit}
-            isAuthenticated={data.isAuthenticated}
-            firstReadableNumber={firstReadableNumber}
-            nextNumber={data.nextNumber}
-            storyPriceCents={story.priceCents}
-          />
+          data.lockReason === "auth" ? (
+            <AuthGate
+              storySlug={story.slug}
+              storyTitle={story.title}
+              authorName={story.authorName}
+              coverUrl={story.coverUrl}
+              synopsis={story.synopsis}
+              publishedCount={story.publishedCount}
+              chapterNumber={chapter.number}
+              firstReadableNumber={firstReadableNumber}
+            />
+          ) : (
+            <UnlockScreen
+              storyId={story.id}
+              storySlug={story.slug}
+              storyTitle={story.title}
+              authorName={story.authorName}
+              coverUrl={story.coverUrl}
+              synopsis={story.synopsis}
+              publishedCount={story.publishedCount}
+              previewLimit={story.previewLimit}
+              isAuthenticated={data.isAuthenticated}
+              firstReadableNumber={firstReadableNumber}
+              nextNumber={data.nextNumber}
+              storyPriceCents={story.priceCents}
+            />
+          )
         ) : content ? (
           <Reader
             storyId={story.id}

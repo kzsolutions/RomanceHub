@@ -129,6 +129,45 @@ export default async function EditChapterPage({ params }: { params: Promise<{ id
           <p className="mb-4 text-sm text-muted">
             Texto puro. Separa os parágrafos com uma linha em branco.
           </p>
+          <details className="mb-4 rounded-xl border bg-surface-2/40 px-3 py-2 text-sm">
+            <summary className="cursor-pointer font-semibold text-muted">
+              Guia rápido de escrita do capítulo
+            </summary>
+            <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-muted">
+              <li>
+                <strong>Microcontactos:</strong> roçar de dedos, olhares que demoram um instante a
+                mais, um ombro que se afasta — a tensão vive nos gestos pequenos, não só no diálogo.
+              </li>
+              <li>
+                <strong>Contradição interna:</strong> o que a personagem sente e o que diz ou faz
+                devem divergir; é essa fricção que revela desejo e medo.
+              </li>
+              <li>
+                <strong>Detalhes sensoriais:</strong> cheiros, temperatura, textura e som ancoram a
+                cena no corpo do leitor (uma lista de sensações nunca conta; usa uma por parágrafo).
+              </li>
+              <li>
+                <strong>Cenário com função:</strong> o espaço deve intensificar o conflito — o
+                silêncio de um escritório, o ruído de uma festa, a chuva que atrasa uma despedida.
+              </li>
+              <li>
+                <strong>Ritmo:</strong> alterna frases curtas nas confrontações com frases longas na
+                introspeção; fecha cenas no momento em que a tensão chega ao máximo.
+              </li>
+              <li>
+                <strong>Evolução da personagem:</strong> cada capítulo deve mudar algo — uma decisão,
+                uma revelação ou uma nova percepção de si mesma.
+              </li>
+              <li>
+                <strong>Originalidade:</strong> evita resolver tudo com beijos ou mal-entendidos
+                repetidos; procura a reacção que só <em>estas</em> personagens teriam.
+              </li>
+              <li>
+                <strong>Fecho com gancho:</strong> termina numa pergunta sem resposta, numa ameaça
+                ou numa escolha iminente para obrigar à leitura do capítulo seguinte.
+              </li>
+            </ul>
+          </details>
           <form action={saveChapterContent}>
             <input type="hidden" name="chapter_id" value={chapter.id} />
             <input type="hidden" name="story_id" value={chapter.storyId} />
