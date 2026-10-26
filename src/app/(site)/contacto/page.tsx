@@ -1,44 +1,48 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, Phone, ReceiptText, ShieldQuestion, Sparkles } from "lucide-react";
+import { BookOpen, Mail, MessageCircle, ReceiptText, ShieldQuestion, Sparkles } from "lucide-react";
 import { StaticPage } from "@/components/layout/StaticPage";
-import { Button } from "@/components/ui/Button";
+import { ContactForm } from "./ContactForm";
+
+const CONTACT_EMAIL = "kzsolutions00@gmail.com";
+const WHATSAPP_HREF = "https://wa.me/258876477153";
 
 export const metadata: Metadata = {
   title: "Contacto",
-  description: "Fala com a equipa do RomanceHub pelo telefone 876 477 153.",
+  description: "Fala com a equipa do RomanceHub por formulário, WhatsApp ou email.",
 };
-
-const PHONE_DISPLAY = "876 477 153";
-const PHONE_HREF = "tel:+258876477153";
 
 export default function ContactoPage() {
   return (
     <StaticPage
       eyebrow="Contacto"
       title="Estamos aqui para ajudar"
-      intro="Tens dúvidas sobre a tua conta, um pagamento ou uma história? Fala connosco pelo telefone. Respondemos o mais breve possível."
+      intro="Tens dúvidas sobre a tua conta, um pagamento ou uma história? Escolhe o canal que preferires. O formulário prepara a mensagem para enviares por email ou WhatsApp; também podes contactar-nos diretamente."
     >
-      <div className="rounded-2xl border border-brand-200 bg-gradient-to-b from-brand-50 to-transparent p-6 shadow-soft dark:border-brand-900/60 dark:from-brand-950/40">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">
-              <Phone className="h-4 w-4" aria-hidden />
-              Telefone
-            </p>
-            <a
-              href={PHONE_HREF}
-              className="mt-1 block font-display text-3xl font-bold tracking-tight text-foreground hover:text-brand-600 dark:hover:text-brand-400"
-            >
-              {PHONE_DISPLAY}
-            </a>
-            <p className="mt-1 text-xs text-muted">Chamada para a rede móvel nacional.</p>
-          </div>
-          <Button href={PHONE_HREF} size="lg">
-            <Phone className="h-4 w-4" aria-hidden />
-            Ligar agora
-          </Button>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <a
+          href={`mailto:${CONTACT_EMAIL}`}
+          className="rounded-2xl border bg-surface p-5 shadow-soft transition-colors hover:border-brand-300 dark:hover:border-brand-800"
+        >
+          <Mail className="h-5 w-5 text-brand-600 dark:text-brand-400" aria-hidden />
+          <p className="mt-3 text-sm font-semibold text-foreground">Email</p>
+          <p className="mt-1 break-all text-sm text-muted">{CONTACT_EMAIL}</p>
+        </a>
+        <a
+          href={WHATSAPP_HREF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-2xl border bg-surface p-5 shadow-soft transition-colors hover:border-brand-300 dark:hover:border-brand-800"
+        >
+          <MessageCircle className="h-5 w-5 text-brand-600 dark:text-brand-400" aria-hidden />
+          <p className="mt-3 text-sm font-semibold text-foreground">WhatsApp</p>
+          <p className="mt-1 text-sm text-muted">Abrir conversa com a equipa</p>
+        </a>
+      </div>
+
+      <h2>Formulário de contacto</h2>
+      <div className="rounded-2xl border bg-surface p-5 shadow-soft sm:p-6">
+        <ContactForm />
       </div>
 
       <h2>Em que podemos ajudar</h2>
@@ -73,8 +77,8 @@ export default function ContactoPage() {
         ))}
       </div>
 
-      <h2>Antes de ligar</h2>
-      <p>Para conseguirmos ajudar mais rápido, tem estes dados à mão:</p>
+      <h2>Antes de escrever</h2>
+      <p>Para conseguirmos ajudar mais rápido, inclui estes dados:</p>
       <ul>
         <li>O email associado à tua conta.</li>
         <li>A referência do pedido, se for sobre um pagamento.</li>
@@ -82,8 +86,8 @@ export default function ContactoPage() {
       </ul>
 
       <p className="rounded-xl border border-dashed bg-surface-2 px-4 py-3 text-xs text-muted">
-        Nunca te pedimos a palavra-passe por telefone. Se receberes um contacto suspeito em nome do
-        RomanceHub, não partilhes dados pessoais e confirma o número nesta página.
+        Nunca te pedimos a palavra-passe por email ou WhatsApp. Se receberes um contacto suspeito em
+        nome do RomanceHub, não partilhes dados pessoais e confirma os nossos canais nesta página.
       </p>
 
       <p className="text-xs text-muted">

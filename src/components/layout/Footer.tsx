@@ -67,12 +67,12 @@ export function Footer({ user = null }: { user?: FooterUser }) {
               amor, paixão e segundas chances para ler onde estiveres.
             </p>
             <p className="text-sm text-muted">
-              Contacto:{" "}
+              Email:{" "}
               <a
-                href="tel:+258876477153"
-                className="font-semibold text-foreground transition-colors hover:text-brand-600 dark:hover:text-brand-400"
+                href="mailto:kzsolutions00@gmail.com"
+                className="break-all font-semibold text-foreground transition-colors hover:text-brand-600 dark:hover:text-brand-400"
               >
-                876 477 153
+                kzsolutions00@gmail.com
               </a>
             </p>
           </div>

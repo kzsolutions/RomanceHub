@@ -15,6 +15,7 @@ import {
 import { getStoryBySlug } from "@/lib/data/stories";
 import { getStoryCharacters } from "@/lib/data/characters";
 import { getStorySocialState } from "@/lib/data/library";
+import { SHOW_STORY_CHARACTERS } from "@/lib/features";
 import { CharacterCard } from "@/components/stories/CharacterCard";
 import { FavoriteButton } from "@/components/stories/FavoriteButton";
 import { RatingWidget } from "@/components/stories/RatingWidget";
@@ -57,7 +58,9 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
   if (!detail) notFound();
 
   const social = await getStorySocialState(detail.story.id);
-  const characters = await getStoryCharacters(detail.story.id);
+  const characters = SHOW_STORY_CHARACTERS
+    ? await getStoryCharacters(detail.story.id)
+    : [];
 
   const { story, chapters, progress, related, authorBio, authorAvatar } = detail;
   const firstChapter = chapters[0]?.number ?? 1;
@@ -289,7 +292,7 @@ export default async function HistoriaPage({ params }: { params: Promise<Params>
       </section>
 
       {/* Personagens */}
-      {characters.length > 0 && (
+      {SHOW_STORY_CHARACTERS && characters.length > 0 && (
         <section className="mt-10">
           <div className="mb-4 flex items-end justify-between gap-4">
             <h2 className="font-display text-2xl font-bold">Personagens</h2>

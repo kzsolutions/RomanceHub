@@ -6,6 +6,7 @@ import { getAdminStory } from "@/lib/data/admin";
 import { getStoryCharactersAdmin } from "@/lib/data/characters";
 import { CharacterForm } from "@/components/admin/CharacterForm";
 import { deleteCharacter } from "@/lib/actions/admin";
+import { SHOW_STORY_CHARACTERS } from "@/lib/features";
 import {
   AdminPageHeader,
   Card,
@@ -34,7 +35,11 @@ export default async function StoryCharactersPage({ params }: { params: Promise<
 
       <AdminPageHeader
         title="Personagens"
-        description="Fichas visuais (texto editorial + retrato estilo anime) apresentadas na página da história."
+        description={
+          SHOW_STORY_CHARACTERS
+            ? "Fichas visuais (texto editorial + retrato estilo anime) apresentadas na página da história."
+            : "Secção pública temporariamente oculta. Podes preparar as fichas aqui; elas só aparecem no site quando a apresentação for ativada."
+        }
         action={
           <Link
             href={`/historias/${story.slug}`}

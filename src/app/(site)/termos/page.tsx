@@ -122,8 +122,9 @@ export default function TermosPage() {
 
       <h2>10. Lei aplicável e contacto</h2>
       <p>
-        Estes termos regem-se pela lei moçambicana. Para questões, contacta-nos pelo telefone{" "}
-        <a href="tel:+258876477153">876 477 153</a>.
+        Estes termos regem-se pela lei moçambicana. Para questões, contacta-nos por email em{" "}
+        <a href="mailto:kzsolutions00@gmail.com">kzsolutions00@gmail.com</a> ou através da{" "}
+        <Link href="/contacto">página de contacto</Link>.
       </p>
 
       <p className="text-xs text-muted">
