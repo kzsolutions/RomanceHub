@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     "ler online",
     "romance em português",
   ],
+  verification: {
+    google: "DJGP5TEQ4qV3REEsdDJjBWD3lbLPJsnpeNphCXrBZWI",
+  },
 };
 
 export const viewport: Viewport = {
